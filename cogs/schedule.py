@@ -9,6 +9,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
 # SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
 
+TIME_TRAVEL = timedelta(days=2, hours=6, minutes=25)
+
 def xml_from_https(link):
     return ET.fromstring(urllib.request.urlopen(link).read().decode("utf8"))
 
@@ -29,13 +31,15 @@ class CogSchedule(commands.Cog):
         self.bot = bot
         self.schedule = schedule_from_xml(xml_from_https(SCHEDULE_LINK))
         self.scheduler = AsyncIOScheduler()
-        self.schedule_events()
         self.print_schedule()
+        self.schedule_events()
+        self.scheduler.start()
 
     def schedule_events(self):
         for event in self.schedule:
+            print(event.start+TIME_TRAVEL)
             self.scheduler.add_job(self.announce_event_start,
-                                   "date", run_date=event.start,
+                                   "date", run_date=event.start+TIME_TRAVEL,
                                    args=[event])
     def print_schedule(self):
         for event in self.schedule:
@@ -54,7 +58,7 @@ def duration_timedelta(timestamp):
 def now():
     # Helper function for testing purposes.
     # Allows the "now" to travel in time.
-    return dt.now() - timedelta(days=2, hours=6)
+    return dt.now() - TIME_TRAVEL
 
 
 class Event():
