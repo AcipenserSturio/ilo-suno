@@ -12,7 +12,7 @@ SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
 # SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
 ANNOUNCEMENT_CHANNEL_ID = 978564101364133898
 
-TIME_TRAVEL = timedelta(days=3, hours=7, minutes=12)
+TIME_TRAVEL = timedelta(days=3, hours=7, minutes=10)
 
 def xml_from_https(link):
     return ET.fromstring(urllib.request.urlopen(link).read().decode("utf8"))
@@ -35,7 +35,6 @@ class CogSchedule(commands.Cog):
         self.announce_channels = []
 
         self.schedule = schedule_from_xml(xml_from_https(SCHEDULE_LINK))
-        #self.print_schedule()
 
         self.scheduler = AsyncIOScheduler()
         self.schedule_events()
@@ -48,15 +47,27 @@ class CogSchedule(commands.Cog):
     def schedule_events(self):
         for event in self.schedule:
             print(event.start+TIME_TRAVEL)
-            self.scheduler.add_job(self.announce_event_start,
+            self.scheduler.add_job(self.announce,
                                    "date", run_date=event.start+TIME_TRAVEL,
-                                   args=[event])
-    def print_schedule(self):
-        for event in self.schedule:
-            event.announce()
+                                   args=[event, "start"])
+            self.scheduler.add_job(self.announce,
+                                   "date", run_date=event.end+TIME_TRAVEL,
+                                   args=[event, "end"])
 
-    async def announce_event_start(self, event):
-        await self.get_announcement_channel().send(embed=event.announce_embed())
+    async def announce(self, event, mode):
+        embed = self.embed(event, mode)
+        await self.get_announcement_channel().send(embed=embed)
+
+    def embed(self, event, mode):
+        embed = Embed()
+        embed.colour = Colour.from_rgb(255, 0, 0) if mode == "start" else Colour.from_rgb(0, 0, 255)
+        embed.title = event.title
+        embed.description = event.description
+        embed.add_field(name="author", value=", ".join(event.authors))
+        embed.add_field(name="starts", value=event.start)
+        embed.add_field(name="previous", value=event.prev, inline=False)
+        embed.add_field(name="next", value=event.next, inline=False)
+        return embed
 
 
 def duration_timedelta(timestamp):
@@ -75,18 +86,23 @@ class Event():
     def __init__(self, xml, room_events):
         self.xml = xml
         self.room_events = room_events
-        self.room = xml.find("room").text
+
         self.title = xml.find("title").text
-        self.start_timestamp = xml.find("date").text[:-1]
-        self.start = dt.fromisoformat(self.start_timestamp)
+        self.description = xml.find("description").text
+        self.room = xml.find("room").text
+        self.authors = [person.text for person in xml.find("persons").findall("person")]
+
+        self._start_timestamp = xml.find("date").text[:-1]
+        self.start = dt.fromisoformat(self._start_timestamp)
         self.duration = duration_timedelta(xml.find("duration").text)
+        self.end = self.start + self.duration
 
     def initialize_adjacent_events(self):
         self.next = self.get_next_event()
         self.prev = self.get_previous_event()
 
     def __repr__(self):
-        return f"Event '{self.title}' starting at {self.start_timestamp}"
+        return f"Event '{self.title}' starting at {self._start_timestamp}"
 
     def get_next_event(self):
         if self.room_events.index(self) == len(self.room_events) - 1:
@@ -109,23 +125,3 @@ class Event():
         if time_to_event_end.total_seconds() < 0:
             return "ongoing"
         return "finished"
-
-    def announce(self):
-        return f"""
-{self.title}
-room: {self.room}
-status: {self.status()}
-starts: {self.start}
-previous: {self.prev}
-next: {self.next}
-=================================================================
-"""
-    def announce_embed(self):
-        embed = Embed()
-        embed.colour = Colour.from_rgb(255, 0, 0)
-        embed.title = self.title
-        embed.description = self.title
-        embed.add_field(name="starts", value=self.start)
-        embed.add_field(name="previous", value=self.prev)
-        embed.add_field(name="next", value=self.next)
-        return embed
