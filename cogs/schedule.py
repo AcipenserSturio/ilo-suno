@@ -1,15 +1,18 @@
-from discord.ext import commands
-import xml.etree.ElementTree as ET
-import urllib.request
 from datetime import datetime as dt
 from datetime import timedelta
+import urllib.request
+import xml.etree.ElementTree as ET
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from discord.commands import slash_command
+from discord.ext import commands
+from discord import Colour, Embed
 
 SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
 # SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
+ANNOUNCEMENT_CHANNEL_ID = 978564101364133898
 
-TIME_TRAVEL = timedelta(days=2, hours=6, minutes=25)
+TIME_TRAVEL = timedelta(days=3, hours=7, minutes=12)
 
 def xml_from_https(link):
     return ET.fromstring(urllib.request.urlopen(link).read().decode("utf8"))
@@ -29,11 +32,18 @@ def schedule_from_xml(xml):
 class CogSchedule(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.announce_channels = []
+
         self.schedule = schedule_from_xml(xml_from_https(SCHEDULE_LINK))
+        #self.print_schedule()
+
         self.scheduler = AsyncIOScheduler()
-        self.print_schedule()
         self.schedule_events()
         self.scheduler.start()
+
+    def get_announcement_channel(self):
+        return self.bot.get_channel(ANNOUNCEMENT_CHANNEL_ID)
+
 
     def schedule_events(self):
         for event in self.schedule:
@@ -45,8 +55,8 @@ class CogSchedule(commands.Cog):
         for event in self.schedule:
             event.announce()
 
-    def announce_event_start(self, event):
-        event.announce()
+    async def announce_event_start(self, event):
+        await self.get_announcement_channel().send(embed=event.announce_embed())
 
 
 def duration_timedelta(timestamp):
@@ -101,10 +111,21 @@ class Event():
         return "finished"
 
     def announce(self):
-        print(self.title)
-        print(f"room: {self.room}")
-        print(f"status: {self.status()}")
-        print(f"starts: {self.start}")
-        print(f"previous: {self.prev}")
-        print(f"next: {self.next}")
-        print("="*60)
+        return f"""
+{self.title}
+room: {self.room}
+status: {self.status()}
+starts: {self.start}
+previous: {self.prev}
+next: {self.next}
+=================================================================
+"""
+    def announce_embed(self):
+        embed = Embed()
+        embed.colour = Colour.from_rgb(255, 0, 0)
+        embed.title = self.title
+        embed.description = self.title
+        embed.add_field(name="starts", value=self.start)
+        embed.add_field(name="previous", value=self.prev)
+        embed.add_field(name="next", value=self.next)
+        return embed
