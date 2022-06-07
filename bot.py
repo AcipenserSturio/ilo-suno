@@ -18,6 +18,7 @@ bot = commands.Bot(command_prefix="/",
 async def on_ready():
     for index, guild in enumerate(bot.guilds):
         print("{}) {}".format(index+1, guild.name))
+    bot.get_cog("CogSchedule").scheduler.start()
 
 if __name__ == "__main__":
     bot.add_cog(CogSchedule(bot))

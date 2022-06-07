@@ -11,8 +11,9 @@ from discord import Colour, Embed
 SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
 # SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
 ANNOUNCEMENT_CHANNEL_ID = 978564101364133898
+GRACE = 1800
 
-TIME_TRAVEL = timedelta(days=3, hours=7, minutes=10)
+TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
 
 def xml_from_https(link):
     return ET.fromstring(urllib.request.urlopen(link).read().decode("utf8"))
@@ -38,7 +39,6 @@ class CogSchedule(commands.Cog):
 
         self.scheduler = AsyncIOScheduler()
         self.schedule_events()
-        self.scheduler.start()
 
     def get_announcement_channel(self):
         return self.bot.get_channel(ANNOUNCEMENT_CHANNEL_ID)
@@ -49,10 +49,14 @@ class CogSchedule(commands.Cog):
             print(event.start+TIME_TRAVEL)
             self.scheduler.add_job(self.announce,
                                    "date", run_date=event.start+TIME_TRAVEL,
-                                   args=[event, "start"])
+                                   args=[event, "start"],
+                                   misfire_grace_time=GRACE)
+            print(len(self.scheduler.get_jobs()))
             self.scheduler.add_job(self.announce,
                                    "date", run_date=event.end+TIME_TRAVEL,
-                                   args=[event, "end"])
+                                   args=[event, "end"],
+                                   misfire_grace_time=GRACE)
+            print(len(self.scheduler.get_jobs()))
 
     async def announce(self, event, mode):
         embed = self.embed(event, mode)
@@ -63,8 +67,9 @@ class CogSchedule(commands.Cog):
         embed.colour = Colour.from_rgb(255, 0, 0) if mode == "start" else Colour.from_rgb(0, 0, 255)
         embed.title = event.title
         embed.description = event.description
-        embed.add_field(name="author", value=", ".join(event.authors))
+        embed.set_author(name=", ".join(event.authors))
         embed.add_field(name="starts", value=event.start)
+        embed.add_field(name="ends", value=event.end)
         embed.add_field(name="previous", value=event.prev, inline=False)
         embed.add_field(name="next", value=event.next, inline=False)
         return embed
