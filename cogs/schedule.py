@@ -68,8 +68,8 @@ class CogSchedule(commands.Cog):
         embed.title = event.title
         embed.description = event.description
         embed.set_author(name=", ".join(event.authors))
-        embed.add_field(name="starts", value=event.start)
-        embed.add_field(name="ends", value=event.end)
+        embed.add_field(name="starts", value=discord_timestamp(event.start))
+        embed.add_field(name="ends", value=discord_timestamp(event.end))
         embed.add_field(name="previous", value=event.prev, inline=False)
         embed.add_field(name="next", value=event.next, inline=False)
         return embed
@@ -86,6 +86,9 @@ def now():
     # Allows the "now" to travel in time.
     return dt.now() - TIME_TRAVEL
 
+
+def discord_timestamp(datetime):
+    return f"<t:{int(datetime.timestamp())}:t>"
 
 class Event():
     def __init__(self, xml, room_events):
