@@ -15,10 +15,13 @@ ANNOUNCEMENT_CHANNEL_ID = 873077312306966548
 GRACE = 1800
 
 # TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
-TIME_TRAVEL = 0
-ROOM_IDS = {"wordcloud room": 1003319404009889942,
+TIME_TRAVEL = timedelta(days=-6, hours=12)
+# Can't do TIME_TRAVEL = 0, only
+# TIME_TRAVEL = timedelta(days=0)
+
+ROOM_IDS = {"wordcloud room": 1003333696268546108,
             "🔊 supa suli": 976133236533112862,
-            "o toki e sitelen, o pali e sitelen": 1003322452207743068,
+            "o toki e sitelen, o pali e sitelen": 1003332191184494652,
             "chill space": 1003318557804875856}
 
 def xml_from_https(link):
@@ -73,13 +76,21 @@ class CogSchedule(commands.Cog):
         embed = Embed()
         embed.colour = Colour.from_rgb(255, 0, 0) if mode == "start" else Colour.from_rgb(0, 0, 255)
         embed.title = event.title
-        embed.description = event.description
         embed.set_author(name=", ".join(event.authors))
-        embed.add_field(name="starts", value=discord_timestamp(event.start))
-        embed.add_field(name="ends", value=discord_timestamp(event.end))
-        embed.add_field(name="previous", value=event.prev, inline=False)
-        embed.add_field(name="next", value=event.next, inline=False)
-        embed.add_field(name="room", value=f"<#{event.room_id}>", inline=False)
+        if mode == "start":
+            embed.description = event.description
+            embed.add_field(name="starts", value=discord_timestamp(event.start))
+            embed.add_field(name="ends", value=discord_timestamp(event.end))
+        else:
+            embed.description = "has ended!"
+        if event.room_id:
+            embed.add_field(name="room", value=f"<#{event.room_id}>", inline=False)
+        if mode == "start":
+            embed.add_field(name="previous", value=event.prev.title)
+        embed.add_field(name="next", value=event.next.title)
+        if mode != "start":
+            if event.next: # might be None, yknow
+                embed.add_field(name="which starts", value=discord_timestamp(event.next.start))
         return embed
 
 
@@ -108,7 +119,10 @@ class Event():
         self.room = xml.find("room").text
         self.authors = [person.text for person in xml.find("persons").findall("person")]
 
-        self.room_id = ROOM_IDS[self.room]
+        if self.room in ROOM_IDS:
+            self.room_id = ROOM_IDS[self.room]
+        else:
+            self.room_id = 0
 
         self._start_timestamp = xml.find("date").text[:-1]
         self.start = dt.fromisoformat(self._start_timestamp)
