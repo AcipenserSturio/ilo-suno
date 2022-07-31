@@ -16,6 +16,10 @@ GRACE = 1800
 
 # TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
 TIME_TRAVEL = 0
+ROOM_IDS = {"wordcloud room": 1003319404009889942,
+            "🔊 supa suli": 976133236533112862,
+            "o toki e sitelen, o pali e sitelen": 1003322452207743068,
+            "chill space": 1003318557804875856}
 
 def xml_from_https(link):
     return ET.fromstring(urllib.request.urlopen(link).read().decode("utf8"))
@@ -75,6 +79,7 @@ class CogSchedule(commands.Cog):
         embed.add_field(name="ends", value=discord_timestamp(event.end))
         embed.add_field(name="previous", value=event.prev, inline=False)
         embed.add_field(name="next", value=event.next, inline=False)
+        embed.add_field(name="room", value=f"<#{event.room_id}>", inline=False)
         return embed
 
 
@@ -102,6 +107,8 @@ class Event():
         self.description = xml.find("description").text
         self.room = xml.find("room").text
         self.authors = [person.text for person in xml.find("persons").findall("person")]
+
+        self.room_id = ROOM_IDS[self.room]
 
         self._start_timestamp = xml.find("date").text[:-1]
         self.start = dt.fromisoformat(self._start_timestamp)
