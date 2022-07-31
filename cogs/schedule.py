@@ -2,18 +2,20 @@ from datetime import datetime as dt
 from datetime import timedelta
 import urllib.request
 import xml.etree.ElementTree as ET
+import json
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from discord.commands import slash_command
 from discord.ext import commands
 from discord import Colour, Embed
 
-SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
-# SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
-ANNOUNCEMENT_CHANNEL_ID = 978564101364133898
+# SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
+SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
+ANNOUNCEMENT_CHANNEL_ID = 873077312306966548
 GRACE = 1800
 
-TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
+# TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
+TIME_TRAVEL = 0
 
 def xml_from_https(link):
     return ET.fromstring(urllib.request.urlopen(link).read().decode("utf8"))
@@ -36,7 +38,8 @@ class CogSchedule(commands.Cog):
         self.announce_channels = []
 
         self.schedule = schedule_from_xml(xml_from_https(SCHEDULE_LINK))
-
+        with open("events.json", "w") as f:
+            f.write(json.dumps([x.to_json() for x in self.schedule]))
         self.scheduler = AsyncIOScheduler()
         self.schedule_events()
 
@@ -133,3 +136,6 @@ class Event():
         if time_to_event_end.total_seconds() < 0:
             return "ongoing"
         return "finished"
+
+    def to_json(self):
+        return { "title": self.title, "description": self.description, "authors": self.authors, "start": self._start_timestamp }
