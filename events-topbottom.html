@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+body {
+  font-family: sans;
+  color: white;
+}
+
+#next {
+  width: 630px;
+  right: 345px;
+  position: absolute;
+  height: 320px;
+  bottom: 0;
+  font-size: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#current {
+  width: 980px;
+  height: 320px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 2.5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+span {
+  padding:1.5rem;
+}
+
+#current span {
+  margin-top:16px;
+}
+
+#next span {
+  margin-top:24px;
+  padding: 2rem;
+}
+
+h1 {
+  color: #dc8add;
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+</style>
+</head>
+<body>
+<script defer src="events.js"></script>
+<div id="current"></div>
+<div id="next"></div>
+</body>
+</html>
+
