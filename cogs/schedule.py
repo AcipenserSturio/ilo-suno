@@ -15,7 +15,7 @@ ANNOUNCEMENT_CHANNEL_ID = 873077312306966548
 GRACE = 1800
 
 # TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
-TIME_TRAVEL = timedelta(days=-6, hours=12)
+TIME_TRAVEL = timedelta(days=-6, hours=17, minutes=45)
 # Can't do TIME_TRAVEL = 0, only
 # TIME_TRAVEL = timedelta(days=0)
 
@@ -85,11 +85,14 @@ class CogSchedule(commands.Cog):
             embed.description = "has ended!"
         if event.room_id:
             embed.add_field(name="room", value=f"<#{event.room_id}>", inline=False)
-        if mode == "start":
-            embed.add_field(name="previous", value=event.prev.title)
-        embed.add_field(name="next", value=event.next.title)
-        if mode != "start":
-            if event.next: # might be None, yknow
+
+        if event.prev: # might be None, yknow
+            if mode == "start":
+                embed.add_field(name="previous", value=event.prev.title)
+
+        if event.next: # might be None, yknow
+            embed.add_field(name="next", value=event.next.title)
+            if mode != "start":
                 embed.add_field(name="which starts", value=discord_timestamp(event.next.start))
         return embed
 
