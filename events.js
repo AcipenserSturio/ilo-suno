@@ -1,5 +1,4 @@
-const TIMETRAVEL = 44792 * 1000;
-
+const TIMETRAVEL = 0 * 1000;
 function set_overlay() {
 	var now = new Date();
 	var times = Object.keys(timings);
@@ -19,7 +18,7 @@ function set_overlay() {
 	}
 	currentText.innerHTML = `<b>${currentEvent['title']}</b>${currentAuthor}`;
 	current.appendChild(currentText);
-	var nextTime = times[times.indexOf(time) + 2];
+	var nextTime = times[times.indexOf(String(time)) + 1];
 	var nextMinutes = Math.ceil((nextTime - now.getTime()) / 60000);
 	var nextEvent = timings[nextTime];
 	var next = document.getElementById("next");
