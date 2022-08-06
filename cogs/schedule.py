@@ -12,12 +12,12 @@ from discord import Colour, Embed
 # SCHEDULE_LINK = "https://events.opensuse.org/conferences/oSC22/schedule.xml"
 SCHEDULE_LINK = "https://suno.pona.la/conferences/2022/schedule.xml"
 ANNOUNCEMENT_CHANNEL_ID = 873077312306966548
-GRACE = 1800
+GRACE = 3600
 
 # TIME_TRAVEL = timedelta(days=3, hours=7, minutes=30)
-TIME_TRAVEL = timedelta(days=-6, hours=17, minutes=45)
+# TIME_TRAVEL = timedelta(days=-6, hours=17, minutes=45)
 # Can't do TIME_TRAVEL = 0, only
-# TIME_TRAVEL = timedelta(days=0)
+TIME_TRAVEL = timedelta(hours=5)
 
 ROOM_IDS = {"wordcloud room": 1003333696268546108,
             "🔊 supa suli": 976133236533112862,
@@ -79,8 +79,8 @@ class CogSchedule(commands.Cog):
         embed.set_author(name=", ".join(event.authors))
         if mode == "start":
             embed.description = event.description
-            embed.add_field(name="starts", value=discord_timestamp(event.start))
-            embed.add_field(name="ends", value=discord_timestamp(event.end))
+            embed.add_field(name="starts", value=discord_timestamp(event.start + TIME_TRAVEL))
+            embed.add_field(name="ends", value=discord_timestamp(event.end + TIME_TRAVEL))
         else:
             embed.description = "has ended!"
         if event.room_id:
@@ -93,7 +93,7 @@ class CogSchedule(commands.Cog):
         if event.next: # might be None, yknow
             embed.add_field(name="next", value=event.next.title)
             if mode != "start":
-                embed.add_field(name="which starts", value=discord_timestamp(event.next.start))
+                embed.add_field(name="which starts", value=discord_timestamp(event.next.start + TIME_TRAVEL))
         return embed
 
 
